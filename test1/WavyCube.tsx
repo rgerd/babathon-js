@@ -31,6 +31,10 @@ export const WavyCube: FunctionComponent<XRBaseProps> = (props: WavyCubeProps) =
                 if (!!cubeMesh) {
                     cubeMesh.dispose();
                 }
+                
+                if (!!meshMaterial) {
+                    meshMaterial.dispose();
+                }
             };
         }
     }, [props.scene]);
