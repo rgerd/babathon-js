@@ -5,7 +5,8 @@ import { Scene, Camera, WebXRSessionManager, WebXRDefaultExperience } from '@bab
 import '@babylonjs/loaders';
 import { IXRFeatureDetails } from 'mixed-reality-toolkit';
 import { XR } from 'mixed-reality-toolkit-tsx';
-import { XRCustomComponent } from './XRCustomComponent'
+import { XRCustomComponent } from './XRCustomComponent';
+import { WavyCube } from './WavyCube';
 
 const EngineScreen: FunctionComponent<ViewProps> = (props: ViewProps) => {
   const engine = useEngine();
@@ -51,14 +52,15 @@ const EngineScreen: FunctionComponent<ViewProps> = (props: ViewProps) => {
       <View style={props.style}>
         <EngineView style={props.style} camera={camera} />
         <XR scene={scene}
-          setXRExperience={setXRExperience}
-          setXRSessionManager={setXRSessionManager}
-          xrFeatures={xrFeatures}
-          xrExperience={xrExperience}
-          xrSessionManager={xrSessionManager}/>
-        <XRCustomComponent scene={scene}
-          xrExperience={xrExperience}
-          setXRFeatures={setXRFeatures} />
+      setXRExperience={setXRExperience}
+      setXRSessionManager={setXRSessionManager}
+      xrFeatures={xrFeatures}
+      xrExperience={xrExperience}
+      xrSessionManager={xrSessionManager}/>
+    <XRCustomComponent scene={scene}
+      xrExperience={xrExperience}
+      setXRFeatures={setXRFeatures} />
+        <WavyCube scene={scene} />
       </View>
     </>
   );
