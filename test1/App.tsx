@@ -52,14 +52,14 @@ const EngineScreen: FunctionComponent<ViewProps> = (props: ViewProps) => {
       <View style={props.style}>
         <EngineView style={props.style} camera={camera} />
         <XR scene={scene}
-      setXRExperience={setXRExperience}
-      setXRSessionManager={setXRSessionManager}
-      xrFeatures={xrFeatures}
-      xrExperience={xrExperience}
-      xrSessionManager={xrSessionManager}/>
-    <XRCustomComponent scene={scene}
-      xrExperience={xrExperience}
-      setXRFeatures={setXRFeatures} />
+          setXRExperience={setXRExperience}
+          setXRSessionManager={setXRSessionManager}
+          xrFeatures={xrFeatures}
+          xrExperience={xrExperience}
+          xrSessionManager={xrSessionManager} />
+        <XRCustomComponent scene={scene}
+          xrExperience={xrExperience}
+          setXRFeatures={setXRFeatures} />
         <WavyCube scene={scene} />
       </View>
     </>
@@ -69,8 +69,8 @@ const EngineScreen: FunctionComponent<ViewProps> = (props: ViewProps) => {
 const App = () => {
   return (
     <>
-      <SafeAreaView style={{flex: 1}}>
-        <EngineScreen style={{flex: 1}} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <EngineScreen style={{ flex: 1 }} />
       </SafeAreaView>
     </>
   );
