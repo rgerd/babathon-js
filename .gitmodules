@@ -1,0 +1,3 @@
+[submodule "External/midi-materials"]
+	path = External/midi-materials
+	url = https://github.com/chrisfromwork/midi-materials.git
