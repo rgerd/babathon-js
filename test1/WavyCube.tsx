@@ -10,13 +10,13 @@ export const WavyCube: FunctionComponent<XRBaseProps> = (props: WavyCubeProps) =
     useEffect(() => {
         if (!!props.scene) {
             const cubeMesh = Mesh.CreateBox("box1", 0.1, props.scene);
-    
+
             const meshMaterial = new DitherEdgeMaterial("boxDitherMat", props.scene, false);
             meshMaterial.diffuseColor = new Color3(0.8, 0.4, 0.2);
-    
+
             cubeMesh.material = meshMaterial;
             cubeMesh.position.z = 0.5;
-                
+
             let time = 0;
             props.scene.registerBeforeRender(() => {
                 time += 0.02
@@ -25,7 +25,7 @@ export const WavyCube: FunctionComponent<XRBaseProps> = (props: WavyCubeProps) =
                 cubeMesh.position.z = Math.cos((time % Math.PI) * Math.sin(time)) + 1.5;
                 cubeMesh.rotate(new Vector3(Math.sin(time), Math.cos(time), 0), Math.sin(time) * 0.05);
             });
-    
+
             return () => {
                 /* Edit here to clean up any content created in the scene */
                 if (!!cubeMesh) {
