@@ -1,29 +1,20 @@
 import { useEffect, FunctionComponent } from 'react';
-import { Mesh, StandardMaterial, Color3, Scene, WebXRDefaultExperience, WebXRHandTracking, WebXRFeatureName, Vector3, WebXRHand, XRHandJoint, AbstractMesh, TrailMesh, Nullable, Observer, WebXRPlaneDetector } from '@babylonjs/core';
+import { Mesh, StandardMaterial, Color3, Scene, WebXRDefaultExperience, WebXRHandTracking, Vector3, WebXRHand, XRHandJoint, TrailMesh, Nullable, Observer } from '@babylonjs/core';
 import { GUI3DManager, HandMenu, TouchHolographicButton } from '@babylonjs/gui';
 import { ViewProps } from 'react-native';
-import { XRFeatureDetails, IXRFeatureDetails, ArticulatedHandTracker, ArticulatedHandTrackerOptions, GetOrEnableXRFeature, GetDefaultPlaneDetectorOptions } from 'mixed-reality-toolkit';
 import { DitherEdgeMaterial } from './DitherEdgeMaterial';
 
 export interface TrailsProps {
     scene?: Scene;
     xrExperience?: WebXRDefaultExperience;
-    setXRFeatures: React.Dispatch<React.SetStateAction<Array<IXRFeatureDetails> | undefined>>;
+    handTracker?: WebXRHandTracking;
 };
 
 export const Trails: FunctionComponent<TrailsProps> = (props: TrailsProps) => {
     useEffect(() => {
         if (!!props.scene &&
-            !!props.xrExperience) {
-            /* Define your required XR features for this scene */
-
-            // Enable hand tracking with visuals
-            const articulatedHandOptions: ArticulatedHandTrackerOptions = {
-                scene: props.scene,
-                xr: props.xrExperience,
-                trackGestures: true,
-                enablePointer: true
-            };
+            !!props.xrExperience &&
+            !!props.handTracker) {
 
             let trailsActive = true;
             const setupTrail = (meshName: string, hand: WebXRHand) => {
@@ -31,7 +22,6 @@ export const Trails: FunctionComponent<TrailsProps> = (props: TrailsProps) => {
                 const trailMesh = new TrailMesh(meshName + "-trail", fingerTip, props.scene!, 1, 15);
                 const material = new DitherEdgeMaterial(meshName + "-mat", props.scene!);
 
-                // material.specularColor = Color3.Black();
                 trailMesh.material = material;
                 fingerTip.material = material;// bug, fast refresh fails and app crashes when making changes to hand code here
                 fingerTip.isVisible = true;
@@ -127,29 +117,22 @@ export const Trails: FunctionComponent<TrailsProps> = (props: TrailsProps) => {
 
             const sceneRenderObservable = props.scene.onBeforeRenderObservable.add(handMenuRenderUpdate);
 
-            const handTrackingFeature = GetOrEnableXRFeature<WebXRHandTracking>(props.xrExperience, WebXRFeatureName.HAND_TRACKING, { xrInput: props.xrExperience.input, jointMeshes: { invisible: true }, handMeshes: { disableDefaultMeshes: true } });
-            const createObserver = handTrackingFeature.onHandAddedObservable.add(onHandCreated);
-            const destroyObserver = handTrackingFeature.onHandRemovedObservable.add(onHandDestroyed);
-
-            const requiredXRFeatures: Array<IXRFeatureDetails> = [
-                new XRFeatureDetails(WebXRHandTracking.Name, articulatedHandOptions),
-                new XRFeatureDetails(WebXRPlaneDetector.Name, GetDefaultPlaneDetectorOptions())];
-            props.setXRFeatures(requiredXRFeatures);
+            const createObserver = props.handTracker.onHandAddedObservable.add(onHandCreated);
+            const destroyObserver = props.handTracker.onHandRemovedObservable.add(onHandDestroyed);
 
             return () => {
-                props.setXRFeatures([]);
                 trails.forEach((handTrails: Array<TrailMesh>) => {
                     handTrails.forEach((mesh: TrailMesh) => {
                         mesh.dispose();
                     });
                 });
                 props.scene?.onBeforeRenderObservable.remove(sceneRenderObservable);
-                handTrackingFeature.onHandAddedObservable.remove(createObserver);
-                handTrackingFeature.onHandRemovedObservable.remove(destroyObserver);
+                props.handTracker?.onHandAddedObservable.remove(createObserver);
+                props.handTracker?.onHandRemovedObservable.remove(destroyObserver);
                 manager.dispose();
             }
         }
-    }, [props.scene, props.xrExperience]);
+    }, [props.scene, props.xrExperience, props.handTracker]);
 
     return null;
 };

@@ -1,7 +1,7 @@
 import React, { useState, FunctionComponent, useEffect } from 'react';
 import { SafeAreaView, View, ViewProps } from 'react-native';
 import { EngineView, useEngine } from '@babylonjs/react-native';
-import { Scene, Camera, WebXRSessionManager, WebXRDefaultExperience } from '@babylonjs/core';
+import { Scene, Camera, WebXRSessionManager, WebXRDefaultExperience, WebXRHandTracking } from '@babylonjs/core';
 import '@babylonjs/loaders';
 import { IXRFeatureDetails } from 'mixed-reality-toolkit';
 import { XR } from 'mixed-reality-toolkit-tsx';
@@ -16,6 +16,7 @@ const EngineScreen: FunctionComponent<ViewProps> = (props: ViewProps) => {
   const [xrExperience, setXRExperience] = useState<WebXRDefaultExperience>();
   const [xrSessionManager, setXRSessionManager] = useState<WebXRSessionManager>();
   const [xrFeatures, setXRFeatures] = useState<Array<IXRFeatureDetails>>();
+  const [handTracker, setHandTracker] = useState<WebXRHandTracking>();
 
   useEffect(() => {
     if (engine) {
@@ -59,10 +60,12 @@ const EngineScreen: FunctionComponent<ViewProps> = (props: ViewProps) => {
           xrExperience={xrExperience}
           xrSessionManager={xrSessionManager} />
         <XRCustomComponent scene={scene}
-          xrExperience={xrExperience} />
+          xrExperience={xrExperience}
+          setXRFeatures={setXRFeatures}
+          setHandTracker={setHandTracker} />
         <Trails scene={scene}
           xrExperience={xrExperience}
-          setXRFeatures={setXRFeatures} />
+          handTracker={handTracker} />
         <WavyCube scene={scene} />
       </View>
     </>
