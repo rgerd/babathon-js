@@ -9,6 +9,9 @@
 // Includes from react-native-permissions
 #include <winrt/RNPermissions.h>
 
+// Includes from react-native-sound
+#include <winrt/RNSound.h>
+
 namespace winrt::Microsoft::ReactNative
 {
 
@@ -18,6 +21,8 @@ void RegisterAutolinkedNativeModulePackages(winrt::Windows::Foundation::Collecti
     packageProviders.Append(winrt::BabylonReactNative::ReactPackageProvider());
     // IReactPackageProviders from react-native-permissions
     packageProviders.Append(winrt::RNPermissions::ReactPackageProvider());
+    // IReactPackageProviders from react-native-sound
+    packageProviders.Append(winrt::RNSound::ReactPackageProvider());
 }
 
 }
