@@ -1,9 +1,11 @@
 import React, { useEffect, FunctionComponent, useState } from 'react';
-import { Scene, WebXRDefaultExperience, WebXRHandTracking, WebXRPlaneDetector, WebXRFeatureName } from '@babylonjs/core';
+import { Mesh, OcclusionMaterial, Ray, Scene, Vector3, WebXRDefaultExperience, WebXRHandTracking, WebXRPlaneDetector, WebXRFeatureName } from '@babylonjs/core';
 import { ViewProps } from 'react-native';
 import { XRFeatureDetails, IXRFeatureDetails, GetOrEnableXRFeature, ArticulatedHandTrackerOptions, GetDefaultPlaneDetectorOptions, CreateGeometryObserver, IGeometryObserverRenderOptions } from 'mixed-reality-toolkit';
-import { MidiPlaybackMaterial } from 'midi-materials';
+import { MidiPlayback } from 'midi-materials';
 import Sound from 'react-native-sound';
+import { NoteOnEvent } from 'midifile-ts';
+import { DitherEdgeMaterial } from './DitherEdgeMaterial';
 
 export interface XRBaseProps extends ViewProps {
     scene?: Scene;
@@ -19,6 +21,7 @@ const MIDI_FILE_BPM: number = 80.1;
 export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseProps) => {
     const [midiDataBuffer, setMidiDataBuffer] = useState<ArrayBuffer>();
     const [sound, setSound] = useState<Sound>();
+    const [material, setMaterial] = useState<DitherEdgeMaterial>();
 
     async function DownloadMidiFileAsync() {
         if (!!midiDataBuffer)
@@ -61,6 +64,41 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
         setSound(sound);
     }
 
+    function OnNoteOnEvent(event: NoteOnEvent)
+    {
+        if (!!props.scene &&
+            !!props.xrExperience &&
+            !!material)
+        {
+            const ray = new Ray(props.xrExperience.baseExperience.camera.position, Vector3.Up());
+            const result = props.scene.pickWithRay(ray);
+            if (!result ||
+                !result.hit)
+            {
+                console.log("Failed to create cube, did not hit anything with upward projection");
+                return;
+            }
+
+            const cubeMesh = Mesh.CreateBox("box1", 0.1, props.scene);
+            cubeMesh.material = material;
+            cubeMesh.position = result.pickedPoint!;
+            cubeMesh.position.x += Math.random() > 0.5 ? Math.random() : -1 * Math.random();
+            cubeMesh.position.z += Math.random() + 1.0;
+
+            function animateCube(scene: Scene)
+            {
+                cubeMesh.position.y -= 0.0002 * scene.deltaTime;
+                if (cubeMesh.position.y < -1.5)
+                {
+                    cubeMesh.dispose();
+                    scene.onBeforeRenderObservable.removeCallback(animateCube);
+                }
+            }
+
+            props.scene.onBeforeRenderObservable.add(animateCube);
+        }
+    }
+
     useEffect(() => {
         DownloadMidiFileAsync();
         SetupAudioFileAsync();
@@ -72,28 +110,29 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
             !!midiDataBuffer &&
             !!sound) {
 
-            const midiMaterial = new MidiPlaybackMaterial("wallMaterial", props.scene, midiDataBuffer, MIDI_FILE_BPM);
-            midiMaterial.material.backFaceCulling = false;
+            const midiPlayback = new MidiPlayback(midiDataBuffer, MIDI_FILE_BPM, props.scene);
+            midiPlayback.noteOnObservable.add(OnNoteOnEvent);            
+            const occlusionMaterial = new OcclusionMaterial("occlusionMat", props.scene);
             const geometryRenderOptions: IGeometryObserverRenderOptions = {
                 generateNormals: true,
-                floorGeometryMaterial: midiMaterial.material,
-                //unknownGeometryMaterial: unknownGeometryMaterial,
-                //backgroundGeometryMaterial: floorMaterial,
-                wallGeometryMaterial: midiMaterial.material,
-                ceilingGeometryMaterial: midiMaterial.material,
-                //platformGeometryMaterial: floorMaterial,
-                //inferredGeometryMaterial: floorMaterial,
-                //worldGeometryMaterial: floorMaterial,
+                ceilingGeometryMaterial: occlusionMaterial,
+                floorGeometryMaterial: occlusionMaterial
             };
             const geometryObserver = CreateGeometryObserver(props.xrExperience, geometryRenderOptions);
 
+            const ditheredMaterial = new DitherEdgeMaterial("test", props.scene);
+            setMaterial(ditheredMaterial);
+
             sound.play();
-            midiMaterial?.play();
+            midiPlayback.play();
 
             return () => {
                 console.log("disposing scene");
                 geometryObserver.dispose();
-                midiMaterial.dispose();
+
+                midiPlayback.noteOnObservable.removeCallback(OnNoteOnEvent);
+                midiPlayback.dispose();
+                
                 sound.release();
                 setSound(undefined);
             };
