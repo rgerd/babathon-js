@@ -6,7 +6,6 @@ import { XRFeatureDetails, IXRFeatureDetails, ArticulatedHandTracker, Articulate
 export interface XRBaseProps extends ViewProps {
     scene?: Scene;
     xrExperience?: WebXRDefaultExperience;
-    setXRFeatures: React.Dispatch<React.SetStateAction<Array<IXRFeatureDetails> | undefined>>;
 };
 
 export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseProps) => {
@@ -29,34 +28,6 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
                     cubeMesh.dispose();
                 }
             };
-        }
-    }, [props.scene, props.xrExperience]);
-
-    useEffect(() => {
-        if (!!props.scene &&
-            !!props.xrExperience) {
-            /* Define your required XR features for this scene */
-
-            // Enable hand tracking with visuals
-            const jointMaterial = new StandardMaterial("jointMaterial", props.scene);
-            const articulatedHandOptions: ArticulatedHandTrackerOptions = {
-                scene: props.scene,
-                xr: props.xrExperience,
-                jointMaterial: jointMaterial,
-                pinchedColor: Color3.White(),
-                unpinchedColor: Color3.Blue(),
-                trackGestures: true,
-                enablePointer: true
-            };
-            const articulatedHandTracker = new ArticulatedHandTracker(articulatedHandOptions);
-            const requiredXRFeatures: Array<IXRFeatureDetails> = [new XRFeatureDetails(WebXRHandTracking.Name, articulatedHandTracker.getHandTrackingOptions())];
-            props.setXRFeatures(requiredXRFeatures);
-
-            return () => {
-                props.setXRFeatures([]);
-                articulatedHandTracker.dispose();
-                jointMaterial.dispose();
-            }
         }
     }, [props.scene, props.xrExperience]);
 

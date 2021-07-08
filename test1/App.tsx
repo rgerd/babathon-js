@@ -6,6 +6,7 @@ import '@babylonjs/loaders';
 import { IXRFeatureDetails } from 'mixed-reality-toolkit';
 import { XR } from 'mixed-reality-toolkit-tsx';
 import { XRCustomComponent } from './XRCustomComponent'
+import { Trails } from './Trails';
 
 const EngineScreen: FunctionComponent<ViewProps> = (props: ViewProps) => {
   const engine = useEngine();
@@ -57,6 +58,8 @@ const EngineScreen: FunctionComponent<ViewProps> = (props: ViewProps) => {
           xrExperience={xrExperience}
           xrSessionManager={xrSessionManager}/>
         <XRCustomComponent scene={scene}
+          xrExperience={xrExperience} />
+        <Trails scene={scene}
           xrExperience={xrExperience}
           setXRFeatures={setXRFeatures} />
       </View>
