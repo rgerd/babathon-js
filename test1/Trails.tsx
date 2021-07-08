@@ -23,8 +23,8 @@ export const Trails: FunctionComponent<TrailsProps> = (props: TrailsProps) => {
                 const material = new DitherEdgeMaterial(meshName + "-mat", props.scene!);
 
                 trailMesh.material = material;
-                fingerTip.material = material;// bug, fast refresh fails and app crashes when making changes to hand code here
-                fingerTip.isVisible = true;
+                //fingerTip.material = material;// bug, fast refresh fails and app crashes when making changes to hand code here
+                //fingerTip.isVisible = true;
 
                 trailMesh.material.backFaceCulling = false;//bug, trail is rendered wrong when moving in half of the directions
 
@@ -98,7 +98,6 @@ export const Trails: FunctionComponent<TrailsProps> = (props: TrailsProps) => {
             // Annoyance: hand menu being placed to the outside of hand means you have to cross hands -> worse tracking, and accidental home button activation
             hMenuButton2.onPointerDownObservable.add(() => {
                 trailsActive = !trailsActive;
-                console.log("swapped");
                 trails.forEach((handTrails: Array<TrailMesh>) => {
                     handTrails.forEach((mesh: TrailMesh) => {
                         mesh.isVisible = trailsActive;
