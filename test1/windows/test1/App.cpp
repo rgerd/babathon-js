@@ -31,7 +31,7 @@ App::App() noexcept
     JavaScriptMainModuleName(L"index");
     InstanceSettings().UseWebDebugger(false); // BabylonReactNative accesses the jsi runtime, which isn't possible with the web debugger
     InstanceSettings().UseFastRefresh(true);
-    InstanceSettings().SourceBundleHost(L"192.168.0.10"); // Update to PC ip address when running on remote machines (HoloLens 2)
+    InstanceSettings().SourceBundleHost(L"localhost"); // Update to PC ip address when running on remote machines (HoloLens 2)
     InstanceSettings().UseDirectDebugger(true);
     InstanceSettings().DebuggerPort(4653);
     InstanceSettings().UseDeveloperSupport(true);
