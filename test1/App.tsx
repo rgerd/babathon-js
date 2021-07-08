@@ -5,7 +5,8 @@ import { Scene, Camera, WebXRSessionManager, WebXRDefaultExperience } from '@bab
 import '@babylonjs/loaders';
 import { IXRFeatureDetails } from 'mixed-reality-toolkit';
 import { XR } from 'mixed-reality-toolkit-tsx';
-import { XRCustomComponent } from './XRCustomComponent'
+import { XRCustomComponent } from './XRCustomComponent';
+import { WavyCube } from './WavyCube';
 import { Trails } from './Trails';
 
 const EngineScreen: FunctionComponent<ViewProps> = (props: ViewProps) => {
@@ -56,12 +57,13 @@ const EngineScreen: FunctionComponent<ViewProps> = (props: ViewProps) => {
           setXRSessionManager={setXRSessionManager}
           xrFeatures={xrFeatures}
           xrExperience={xrExperience}
-          xrSessionManager={xrSessionManager}/>
+          xrSessionManager={xrSessionManager} />
         <XRCustomComponent scene={scene}
           xrExperience={xrExperience} />
         <Trails scene={scene}
           xrExperience={xrExperience}
           setXRFeatures={setXRFeatures} />
+        <WavyCube scene={scene} />
       </View>
     </>
   );
@@ -70,8 +72,8 @@ const EngineScreen: FunctionComponent<ViewProps> = (props: ViewProps) => {
 const App = () => {
   return (
     <>
-      <SafeAreaView style={{flex: 1}}>
-        <EngineScreen style={{flex: 1}} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <EngineScreen style={{ flex: 1 }} />
       </SafeAreaView>
     </>
   );
