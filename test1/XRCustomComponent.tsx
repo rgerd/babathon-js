@@ -1,7 +1,7 @@
 import React, { useEffect, FunctionComponent, useState } from 'react';
-import { Mesh, OcclusionMaterial, Ray, Scene, Vector3, WebXRDefaultExperience } from '@babylonjs/core';
+import { Mesh, OcclusionMaterial, Ray, Scene, Vector3, WebXRDefaultExperience, WebXRHandTracking, WebXRPlaneDetector, WebXRFeatureName } from '@babylonjs/core';
 import { ViewProps } from 'react-native';
-import { CreateGeometryObserver, IGeometryObserverRenderOptions } from 'mixed-reality-toolkit';
+import { XRFeatureDetails, IXRFeatureDetails, GetOrEnableXRFeature, ArticulatedHandTrackerOptions, GetDefaultPlaneDetectorOptions, CreateGeometryObserver, IGeometryObserverRenderOptions } from 'mixed-reality-toolkit';
 import { MidiPlayback } from 'midi-materials';
 import Sound from 'react-native-sound';
 import { NoteOnEvent } from 'midifile-ts';
@@ -10,6 +10,8 @@ import { DitherEdgeMaterial } from './DitherEdgeMaterial';
 export interface XRBaseProps extends ViewProps {
     scene?: Scene;
     xrExperience?: WebXRDefaultExperience;
+    setXRFeatures: React.Dispatch<React.SetStateAction<Array<IXRFeatureDetails> | undefined>>;
+    setHandTracker: React.Dispatch<React.SetStateAction<WebXRHandTracking | undefined>>;
 };
 
 const AUDIO_FILE_PATH: string = 'https://allotropeijk.blob.core.windows.net/2021summerexhibit/recording.6.shortened.mp3';
@@ -136,6 +138,33 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
             };
         }
     }, [props.scene, props.xrExperience, midiDataBuffer, sound]);
+
+    useEffect(() => {
+        if (!!props.scene &&
+            !!props.xrExperience) {
+            /* Define your required XR features for this scene */
+
+            // Enable hand tracking with visuals
+            const articulatedHandOptions: ArticulatedHandTrackerOptions = {
+                scene: props.scene,
+                xr: props.xrExperience,
+                trackGestures: true,
+                enablePointer: true
+            };
+            const handTrackingFeature = GetOrEnableXRFeature<WebXRHandTracking>(props.xrExperience, WebXRFeatureName.HAND_TRACKING, {xrInput: props.xrExperience.input, jointMeshes: {invisible: true},handMeshes: {disableDefaultMeshes: true}});
+            const requiredXRFeatures: Array<IXRFeatureDetails> = [
+                new XRFeatureDetails(WebXRHandTracking.Name, articulatedHandOptions),
+                new XRFeatureDetails(WebXRPlaneDetector.Name, GetDefaultPlaneDetectorOptions())];
+
+            props.setXRFeatures(requiredXRFeatures);
+            props.setHandTracker(handTrackingFeature);
+
+            return () => {
+                props.setXRFeatures([]);
+                props.setHandTracker(undefined);
+            }
+        }
+    }, [props.scene, props.xrExperience]);
 
     return null;
 };
