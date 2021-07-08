@@ -21,7 +21,6 @@ const MIDI_FILE_BPM: number = 80.1;
 export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseProps) => {
     const [midiDataBuffer, setMidiDataBuffer] = useState<ArrayBuffer>();
     const [sound, setSound] = useState<Sound>();
-    const [material, setMaterial] = useState<DitherEdgeMaterial>();
 
     async function DownloadMidiFileAsync() {
         if (!!midiDataBuffer)
@@ -67,8 +66,7 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
     function OnNoteOnEvent(event: NoteOnEvent)
     {
         if (!!props.scene &&
-            !!props.xrExperience &&
-            !!material)
+            !!props.xrExperience)
         {
             const ray = new Ray(props.xrExperience.baseExperience.camera.position, Vector3.Up());
             const result = props.scene.pickWithRay(ray);
@@ -80,7 +78,7 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
             }
 
             const cubeMesh = Mesh.CreateBox("box1", 0.1, props.scene);
-            cubeMesh.material = material;
+            cubeMesh.material = new DitherEdgeMaterial("test", props.scene);
             cubeMesh.position = result.pickedPoint!;
             cubeMesh.position.x += Math.random() > 0.5 ? Math.random() : -1 * Math.random();
             cubeMesh.position.z += Math.random() + 1.0;
@@ -90,6 +88,7 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
                 cubeMesh.position.y -= 0.0002 * scene.deltaTime;
                 if (cubeMesh.position.y < -1.5)
                 {
+                    cubeMesh.material?.dispose();
                     cubeMesh.dispose();
                     scene.onBeforeRenderObservable.removeCallback(animateCube);
                 }
@@ -119,9 +118,6 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
                 floorGeometryMaterial: occlusionMaterial
             };
             const geometryObserver = CreateGeometryObserver(props.xrExperience, geometryRenderOptions);
-
-            const ditheredMaterial = new DitherEdgeMaterial("test", props.scene);
-            setMaterial(ditheredMaterial);
 
             sound.play();
             midiPlayback.play();
