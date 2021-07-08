@@ -1,5 +1,5 @@
 import React, { useEffect, FunctionComponent, useState } from 'react';
-import { Mesh, OcclusionMaterial, Ray, Scene, Vector3, WebXRDefaultExperience, WebXRHandTracking, WebXRPlaneDetector, WebXRFeatureName } from '@babylonjs/core';
+import { Mesh, OcclusionMaterial, Ray, Scene, Vector3, WebXRDefaultExperience, WebXRHandTracking, WebXRPlaneDetector, WebXRFeatureName, Nullable } from '@babylonjs/core';
 import { ViewProps } from 'react-native';
 import { XRFeatureDetails, IXRFeatureDetails, GetOrEnableXRFeature, ArticulatedHandTrackerOptions, GetDefaultPlaneDetectorOptions, CreateGeometryObserver, IGeometryObserverRenderOptions } from 'mixed-reality-toolkit';
 import { MidiPlayback } from 'midi-materials';
@@ -63,38 +63,52 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
         setSound(sound);
     }
 
-    function OnNoteOnEvent(event: NoteOnEvent)
-    {
+    let lastPickedPoint: Nullable<Vector3> = null;
+    let ditherMaterial: Nullable<DitherEdgeMaterial> = null;
+    let cubes = new Array<any>();
+    function OnNoteOnEvent() {
         if (!!props.scene &&
-            !!props.xrExperience)
-        {
+            !!props.xrExperience) {
             const ray = new Ray(props.xrExperience.baseExperience.camera.position, Vector3.Up());
             const result = props.scene.pickWithRay(ray);
-            if (!result ||
-                !result.hit)
-            {
-                console.log("Failed to create cube, did not hit anything with upward projection");
+            const currentCeilingPoint = (result?.hit && result?.pickedPoint) ? result.pickedPoint : lastPickedPoint;
+            if (!lastPickedPoint && currentCeilingPoint) {
+                console.log("Found a point!");
+            }
+            lastPickedPoint = currentCeilingPoint;
+            if (!lastPickedPoint) {
                 return;
             }
 
-            const cubeMesh = Mesh.CreateBox("box1", 0.1, props.scene);
-            cubeMesh.material = new DitherEdgeMaterial("test", props.scene);
-            cubeMesh.position = result.pickedPoint!;
-            cubeMesh.position.x += Math.random() > 0.5 ? Math.random() : -1 * Math.random();
+            ditherMaterial = ditherMaterial || new DitherEdgeMaterial("test", props.scene);
+
+            const cubeMesh = Mesh.CreateBox("box1", 1, props.scene);
+            
+            cubeMesh.scaling = new Vector3(Math.random() * 0.1 + 0.06, Math.random() * 0.1 + 0.06, Math.random() * 0.1 + 0.06);
+            cubeMesh.material = ditherMaterial;
+            cubeMesh.position = lastPickedPoint;
+            cubeMesh.position.x += (Math.random() - 0.5) * 2;
             cubeMesh.position.z += Math.random() + 1.0;
 
-            function animateCube(scene: Scene)
-            {
-                cubeMesh.position.y -= 0.0002 * scene.deltaTime;
-                if (cubeMesh.position.y < -1.5)
-                {
+            const anyCube = cubeMesh as any;
+            anyCube["_fallSpeed"] = (Math.random() * 0.05) + 0.05;
+            anyCube["_fallAccel"] = (Math.random() * 0.5) + 1;
+
+            anyCube["_animate"] = (scene: Scene) => {
+                const deltaTimeSeconds = scene.deltaTime * 0.001;
+                const fallSpeed = anyCube["_fallSpeed"] + anyCube["_fallAccel"] * deltaTimeSeconds;
+                anyCube["_fallSpeed"] = fallSpeed;
+                cubeMesh.position.y -= fallSpeed * deltaTimeSeconds;
+                if (cubeMesh.position.y < -1.5) {
                     cubeMesh.material?.dispose();
                     cubeMesh.dispose();
-                    scene.onBeforeRenderObservable.removeCallback(animateCube);
+                    scene.onBeforeRenderObservable.removeCallback(anyCube["_animate"]);
+                    return false;
                 }
-            }
+                return true;
+            };
 
-            props.scene.onBeforeRenderObservable.add(animateCube);
+            cubes.push(anyCube);
         }
     }
 
@@ -118,12 +132,13 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
                 floorGeometryMaterial: occlusionMaterial
             };
             const geometryObserver = CreateGeometryObserver(props.xrExperience, geometryRenderOptions);
+            
+            props.scene.registerBeforeRender(() => { cubes = cubes.filter((cube) => cube["_animate"](props.scene)) });
 
             sound.play();
             midiPlayback.play();
 
             return () => {
-                console.log("disposing scene");
                 geometryObserver.dispose();
 
                 midiPlayback.noteOnObservable.removeCallback(OnNoteOnEvent);
