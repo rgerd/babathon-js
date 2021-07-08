@@ -3,6 +3,7 @@ import { Mesh, StandardMaterial, Color3, Scene, WebXRDefaultExperience, WebXRHan
 import { GUI3DManager, HandMenu, TouchHolographicButton } from '@babylonjs/gui';
 import { ViewProps } from 'react-native';
 import { XRFeatureDetails, IXRFeatureDetails, ArticulatedHandTracker, ArticulatedHandTrackerOptions, GetOrEnableXRFeature } from 'mixed-reality-toolkit';
+import { DitherEdgeMaterial } from './DitherEdgeMaterial';
 
 export interface TrailsProps {
     scene?: Scene;
@@ -26,15 +27,18 @@ export const Trails: FunctionComponent<TrailsProps> = (props: TrailsProps) => {
 
             let trailsActive = true;
             const setupTrail = (meshName: string, hand: WebXRHand) => {
-                const trailMesh = new TrailMesh(meshName + "-trail", hand.getJointMesh(meshName as XRHandJoint), props.scene!, 1, 15);
-                const material = new StandardMaterial(meshName+"-mat", props.scene!);
+                const fingerTip = hand.getJointMesh(meshName as XRHandJoint)
+                const trailMesh = new TrailMesh(meshName + "-trail", fingerTip, props.scene!, 1, 15);
+                const material = new DitherEdgeMaterial(meshName+"-mat", props.scene!);
 
-                material.specularColor = Color3.Black();
+            //    material.specularColor = Color3.Black();
                 trailMesh.material = material;
+                fingerTip.material = material;// bug, fast refresh fails and app crashes when making changes to hand code here
+                fingerTip.isVisible = true;
 
                 trailMesh.material.backFaceCulling = false;//bug, trail is rendered wrong when moving in half of the directions
 
-                trailMesh.psuedoparent = hand.getJointMesh(meshName as XRHandJoint);
+                trailMesh.psuedoparent = fingerTip;
 
                 if (!trailsActive) {
                     trailMesh.setEnabled(false);
@@ -69,8 +73,18 @@ export const Trails: FunctionComponent<TrailsProps> = (props: TrailsProps) => {
                         if (trailMesh.material) {
                             // Bug? TrailMesh position is always 0, since it never updates the position, only the vertex/indices data. Also no way to get the parent mesh off of the trail, or the trail off of the parent mesh
                             //const trailColor = new Color3(trailMesh.position.x % 1, trailMesh.position.y % 1, trailMesh.position.z % 1);
-                            const trailColor = new Color3(Math.abs(((trailMesh.psuedoparent.position.x * 100) % 100) / 100), Math.abs(((trailMesh.psuedoparent.position.y * 100) % 100) / 100), Math.abs(((trailMesh.psuedoparent.position.z * 100) % 100) / 100));
-                            const mat = trailMesh.material as StandardMaterial;
+
+                            const getColorScale = (pos: number) => {
+                                // create a positive decimal value with 2 precision out of the position
+                                let val =  Math.abs(((pos * 100) % 100) / 100);
+                                return val;
+                            };
+                            const trailColor = new Color3(
+                                getColorScale(trailMesh.psuedoparent.position.x),
+                                getColorScale(trailMesh.psuedoparent.position.y),
+                                getColorScale(trailMesh.psuedoparent.position.z));
+
+                            const mat = trailMesh.material as DitherEdgeMaterial;
                             mat.diffuseColor = mat.emissiveColor = trailColor;
                         }
                     });
