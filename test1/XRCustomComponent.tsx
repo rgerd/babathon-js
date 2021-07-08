@@ -1,14 +1,13 @@
 import React, { useEffect, FunctionComponent, useState } from 'react';
-import { Mesh, StandardMaterial, Color3, Scene, WebXRDefaultExperience, WebXRHandTracking, WebXRMeshDetector, OcclusionMaterial, PointLight, Vector3, WebXRPlaneDetector, _forceSceneHelpersToBundle } from '@babylonjs/core';
+import { Scene, WebXRDefaultExperience } from '@babylonjs/core';
 import { ViewProps } from 'react-native';
-import { XRFeatureDetails, IXRFeatureDetails, ArticulatedHandTracker, ArticulatedHandTrackerOptions, GetDefaultMeshDetectorOptions, CreateGeometryObserver, SceneUnderstandingGeometryObserverRenderOptions, IGeometryObserverRenderOptions, GetDefaultPlaneDetectorOptions } from 'mixed-reality-toolkit';
+import { CreateGeometryObserver, IGeometryObserverRenderOptions } from 'mixed-reality-toolkit';
 import { MidiPlaybackMaterial } from 'midi-materials';
 import Sound from 'react-native-sound';
 
 export interface XRBaseProps extends ViewProps {
     scene?: Scene;
     xrExperience?: WebXRDefaultExperience;
-    setXRFeatures: React.Dispatch<React.SetStateAction<Array<IXRFeatureDetails> | undefined>>;
 };
 
 const AUDIO_FILE_PATH: string = 'https://allotropeijk.blob.core.windows.net/2021summerexhibit/recording.6.shortened.mp3';
@@ -98,58 +97,6 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
             };
         }
     }, [props.scene, props.xrExperience, midiDataBuffer, sound]);
-
-    useEffect(() => {
-        if (!!props.scene &&
-            !!props.xrExperience) {
-            console.log("creating scene");
-
-            /* Edit here to add your own scene content */
-            const cubeMesh = Mesh.CreateBox("box1", 0.1, props.scene);
-
-            const meshMaterial: StandardMaterial = new StandardMaterial("meshMaterial", props.scene);
-            meshMaterial.diffuseColor = new Color3(1, 0, 0);
-            meshMaterial.specularColor = Color3.Black();
-
-            cubeMesh.material = meshMaterial;
-            cubeMesh.position.z = 0.5;
-
-            return () => {
-                cubeMesh.dispose();
-                meshMaterial.dispose();
-            };
-        }
-    }, [props.scene, props.xrExperience]);
-
-    useEffect(() => {
-        if (!!props.scene &&
-            !!props.xrExperience) {
-            /* Define your required XR features for this scene */
-
-            // Enable hand tracking with visuals
-            const jointMaterial = new StandardMaterial("jointMaterial", props.scene);
-            const articulatedHandOptions: ArticulatedHandTrackerOptions = {
-                scene: props.scene,
-                xr: props.xrExperience,
-                jointMaterial: jointMaterial,
-                pinchedColor: Color3.White(),
-                unpinchedColor: Color3.Blue(),
-                trackGestures: true,
-                enablePointer: true
-            };
-            const articulatedHandTracker = new ArticulatedHandTracker(articulatedHandOptions);
-            const requiredXRFeatures: Array<IXRFeatureDetails> = [
-                new XRFeatureDetails(WebXRHandTracking.Name, articulatedHandTracker.getHandTrackingOptions()),
-                new XRFeatureDetails(WebXRPlaneDetector.Name, GetDefaultPlaneDetectorOptions())];
-            props.setXRFeatures(requiredXRFeatures);
-
-            return () => {
-                props.setXRFeatures([]);
-                articulatedHandTracker.dispose();
-                jointMaterial.dispose();
-            }
-        }
-    }, [props.scene, props.xrExperience]);
 
     return null;
 };
