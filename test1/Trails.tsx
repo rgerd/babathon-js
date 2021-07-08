@@ -1,8 +1,8 @@
 import { useEffect, FunctionComponent } from 'react';
-import { Mesh, StandardMaterial, Color3, Scene, WebXRDefaultExperience, WebXRHandTracking, WebXRFeatureName, Vector3, WebXRHand, XRHandJoint, AbstractMesh, TrailMesh, Nullable, Observer } from '@babylonjs/core';
+import { Mesh, StandardMaterial, Color3, Scene, WebXRDefaultExperience, WebXRHandTracking, WebXRFeatureName, Vector3, WebXRHand, XRHandJoint, AbstractMesh, TrailMesh, Nullable, Observer, WebXRPlaneDetector } from '@babylonjs/core';
 import { GUI3DManager, HandMenu, TouchHolographicButton } from '@babylonjs/gui';
 import { ViewProps } from 'react-native';
-import { XRFeatureDetails, IXRFeatureDetails, ArticulatedHandTracker, ArticulatedHandTrackerOptions, GetOrEnableXRFeature } from 'mixed-reality-toolkit';
+import { XRFeatureDetails, IXRFeatureDetails, ArticulatedHandTracker, ArticulatedHandTrackerOptions, GetOrEnableXRFeature, GetDefaultPlaneDetectorOptions } from 'mixed-reality-toolkit';
 import { DitherEdgeMaterial } from './DitherEdgeMaterial';
 
 export interface TrailsProps {
@@ -29,9 +29,9 @@ export const Trails: FunctionComponent<TrailsProps> = (props: TrailsProps) => {
             const setupTrail = (meshName: string, hand: WebXRHand) => {
                 const fingerTip = hand.getJointMesh(meshName as XRHandJoint)
                 const trailMesh = new TrailMesh(meshName + "-trail", fingerTip, props.scene!, 1, 15);
-                const material = new DitherEdgeMaterial(meshName+"-mat", props.scene!);
+                const material = new DitherEdgeMaterial(meshName + "-mat", props.scene!);
 
-            //    material.specularColor = Color3.Black();
+                // material.specularColor = Color3.Black();
                 trailMesh.material = material;
                 fingerTip.material = material;// bug, fast refresh fails and app crashes when making changes to hand code here
                 fingerTip.isVisible = true;
@@ -68,7 +68,7 @@ export const Trails: FunctionComponent<TrailsProps> = (props: TrailsProps) => {
             }
 
             const onTrailRender = () => {
-                trails.forEach((hand: Array<TrailMesh>) =>{
+                trails.forEach((hand: Array<TrailMesh>) => {
                     hand.forEach((trailMesh: TrailMesh) => {
                         if (trailMesh.material) {
                             // Bug? TrailMesh position is always 0, since it never updates the position, only the vertex/indices data. Also no way to get the parent mesh off of the trail, or the trail off of the parent mesh
@@ -76,7 +76,7 @@ export const Trails: FunctionComponent<TrailsProps> = (props: TrailsProps) => {
 
                             const getColorScale = (pos: number) => {
                                 // create a positive decimal value with 2 precision out of the position
-                                let val =  Math.abs(((pos * 100) % 100) / 100);
+                                let val = Math.abs(((pos * 100) % 100) / 100);
                                 return val;
                             };
                             const trailColor = new Color3(
@@ -106,7 +106,7 @@ export const Trails: FunctionComponent<TrailsProps> = (props: TrailsProps) => {
             let trailObservable: Nullable<Observer<Scene>>;
 
             // Annoyance: hand menu being placed to the outside of hand means you have to cross hands -> worse tracking, and accidental home button activation
-            hMenuButton2.onPointerDownObservable.add(()=>{
+            hMenuButton2.onPointerDownObservable.add(() => {
                 trailsActive = !trailsActive;
                 console.log("swapped");
                 trails.forEach((handTrails: Array<TrailMesh>) => {
@@ -127,11 +127,13 @@ export const Trails: FunctionComponent<TrailsProps> = (props: TrailsProps) => {
 
             const sceneRenderObservable = props.scene.onBeforeRenderObservable.add(handMenuRenderUpdate);
 
-            const handTrackingFeature = GetOrEnableXRFeature<WebXRHandTracking>(props.xrExperience, WebXRFeatureName.HAND_TRACKING, {xrInput: props.xrExperience.input, jointMeshes: {invisible: true},handMeshes: {disableDefaultMeshes: true}});
+            const handTrackingFeature = GetOrEnableXRFeature<WebXRHandTracking>(props.xrExperience, WebXRFeatureName.HAND_TRACKING, { xrInput: props.xrExperience.input, jointMeshes: { invisible: true }, handMeshes: { disableDefaultMeshes: true } });
             const createObserver = handTrackingFeature.onHandAddedObservable.add(onHandCreated);
             const destroyObserver = handTrackingFeature.onHandRemovedObservable.add(onHandDestroyed);
 
-            const requiredXRFeatures: Array<IXRFeatureDetails> = [new XRFeatureDetails(WebXRHandTracking.Name, articulatedHandOptions)];
+            const requiredXRFeatures: Array<IXRFeatureDetails> = [
+                new XRFeatureDetails(WebXRHandTracking.Name, articulatedHandOptions),
+                new XRFeatureDetails(WebXRPlaneDetector.Name, GetDefaultPlaneDetectorOptions())];
             props.setXRFeatures(requiredXRFeatures);
 
             return () => {

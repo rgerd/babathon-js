@@ -1,3 +1,6 @@
 [submodule "External/midi-materials"]
 	path = External/midi-materials
 	url = https://github.com/chrisfromwork/midi-materials.git
+[submodule "External/react-native-sound"]
+	path = External/react-native-sound
+	url = https://github.com/chrisfromwork/react-native-sound.git
