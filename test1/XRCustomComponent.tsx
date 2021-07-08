@@ -114,6 +114,7 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
             const geometryRenderOptions: IGeometryObserverRenderOptions = {
                 generateNormals: true,
                 ceilingGeometryMaterial: occlusionMaterial,
+                floorGeometryMaterial: occlusionMaterial
             };
             const geometryObserver = CreateGeometryObserver(props.xrExperience, geometryRenderOptions);
 
