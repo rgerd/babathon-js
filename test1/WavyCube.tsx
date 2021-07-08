@@ -6,13 +6,14 @@ export interface WavyCubeProps {
     scene?: Scene;
 };
 
-export const WavyCube: FunctionComponent<XRBaseProps> = (props: WavyCubeProps) => {
+export const WavyCube: FunctionComponent<WavyCubeProps> = (props: WavyCubeProps) => {
     useEffect(() => {
         if (!!props.scene) {
             const cubeMesh = Mesh.CreateBox("box1", 0.1, props.scene);
 
             const meshMaterial = new DitherEdgeMaterial("boxDitherMat", props.scene, false);
             meshMaterial.diffuseColor = new Color3(0.8, 0.4, 0.2);
+            meshMaterial.emissiveColor = new Color3(0.2, 0.4, 0.2);
 
             cubeMesh.material = meshMaterial;
             cubeMesh.position.z = 0.5;

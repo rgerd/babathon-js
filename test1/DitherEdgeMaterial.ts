@@ -48,6 +48,7 @@ uniform float screenAspectRatio;
 #else
     uniform vec3 diffuseColor;
 #endif
+uniform vec3 emissiveColor;
 
 varying vec3 vPositionW;
 varying vec3 vNormalW;
@@ -65,7 +66,12 @@ varying float vDitherAmount;
 #include<__decl__lightFragment>[3]
 #include<lightsFragmentFunctions>
 
-void main() {
+void main() {    
+    ivec2 ditherIdx = ivec2(vScreenPosition * screenDimensions) / 4;
+    if (abs(int(sin(float(ditherIdx.x)) * 16.) + int(cos(float(ditherIdx.y)) * 16.)) % 8 < int(((vDitherAmount - 0.8) * 2.) * 10.)) {
+        discard;
+    }
+
     vec3 diffuseBase = vec3(0.);
     lightingInfo info;
     float shadow = 1.;
@@ -83,12 +89,9 @@ void main() {
         vec3 finalDiffuseColor = texture(diffuseTexture, vUV).rgb;
     #endif
     vec3 finalDiffuse = clamp(diffuseBase * finalDiffuseColor, 0.0, 1.0);
+    vec3 finalColor = clamp(finalDiffuse + emissiveColor, 0.0, 1.0);
 
-    ivec2 ditherIdx = ivec2(vScreenPosition * screenDimensions) / 4;
-    if (abs(int(sin(float(ditherIdx.x)) * 16.) + int(cos(float(ditherIdx.y)) * 16.)) % 8 < int(((vDitherAmount - 0.8) * 2.) * 10.)) {
-        discard;
-    }
-    gl_FragColor = vec4(finalDiffuse, 1.);
+    gl_FragColor = vec4(finalColor, 1.);
 }
 `;
 
@@ -133,6 +136,10 @@ export class DitherEdgeMaterial extends BABYLON.ShaderMaterial {
         this.setColor3("diffuseColor", color);
     }
 
+    public set emissiveColor(color: BABYLON.Color3) {
+        this.setColor3("emissiveColor", color);
+    }
+
     public isReady(mesh?: BABYLON.AbstractMesh, useInstances?: boolean, subMesh?: BABYLON.SubMesh): boolean {
         if (!mesh) {
             return false;
@@ -154,6 +161,7 @@ export class DitherEdgeMaterial extends BABYLON.ShaderMaterial {
             "vEyePosition",
             "diffuseColor",
             "diffuseTexture",
+            "emissiveColor",
             "screenDimensions",
             "screenAspectRatio"
         ];
