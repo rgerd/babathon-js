@@ -23,8 +23,7 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
     const [sound, setSound] = useState<Sound>();
 
     async function DownloadMidiFileAsync() {
-        if (!!midiDataBuffer)
-        {
+        if (!!midiDataBuffer) {
             return;
         }
 
@@ -37,7 +36,7 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
             };
             request.send();
         });
-     
+
         if (!data) {
             throw new Error("Failed to load midi file");
         }
@@ -49,8 +48,7 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
         Sound.setCategory('Playback');
         const sound = await new Promise<Sound>((resolve, reject) => {
             const sound = new Sound(AUDIO_FILE_PATH, Sound.MAIN_BUNDLE, (error) => {
-                if (!!error)
-                {
+                if (!!error) {
                     reject();
                 }
 
@@ -83,7 +81,7 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
             ditherMaterial = ditherMaterial || new DitherEdgeMaterial("test", props.scene);
 
             const cubeMesh = Mesh.CreateBox("box1", 1, props.scene);
-            
+
             cubeMesh.scaling = new Vector3(Math.random() * 0.1 + 0.06, Math.random() * 0.1 + 0.06, Math.random() * 0.1 + 0.06);
             cubeMesh.material = ditherMaterial;
             cubeMesh.position = lastPickedPoint;
@@ -124,7 +122,7 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
             !!sound) {
 
             const midiPlayback = new MidiPlayback(midiDataBuffer, MIDI_FILE_BPM, props.scene);
-            midiPlayback.noteOnObservable.add(OnNoteOnEvent);            
+            midiPlayback.noteOnObservable.add(OnNoteOnEvent);
             const occlusionMaterial = new OcclusionMaterial("occlusionMat", props.scene);
             const geometryRenderOptions: IGeometryObserverRenderOptions = {
                 generateNormals: true,
@@ -132,7 +130,7 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
                 floorGeometryMaterial: occlusionMaterial
             };
             const geometryObserver = CreateGeometryObserver(props.xrExperience, geometryRenderOptions);
-            
+
             props.scene.registerBeforeRender(() => { cubes = cubes.filter((cube) => cube["_animate"](props.scene)) });
 
             sound.play();
@@ -143,7 +141,7 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
 
                 midiPlayback.noteOnObservable.removeCallback(OnNoteOnEvent);
                 midiPlayback.dispose();
-                
+
                 sound.release();
                 setSound(undefined);
             };
@@ -162,7 +160,7 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
                 trackGestures: true,
                 enablePointer: true
             };
-            const handTrackingFeature = GetOrEnableXRFeature<WebXRHandTracking>(props.xrExperience, WebXRFeatureName.HAND_TRACKING, {xrInput: props.xrExperience.input, jointMeshes: {invisible: true},handMeshes: {disableDefaultMeshes: true}});
+            const handTrackingFeature = GetOrEnableXRFeature<WebXRHandTracking>(props.xrExperience, WebXRFeatureName.HAND_TRACKING, { xrInput: props.xrExperience.input, jointMeshes: { invisible: true }, handMeshes: { disableDefaultMeshes: true } });
             const requiredXRFeatures: Array<IXRFeatureDetails> = [
                 new XRFeatureDetails(WebXRHandTracking.Name, articulatedHandOptions),
                 new XRFeatureDetails(WebXRPlaneDetector.Name, GetDefaultPlaneDetectorOptions())];
