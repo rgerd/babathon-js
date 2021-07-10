@@ -1,5 +1,5 @@
 import React, { useEffect, FunctionComponent, useState } from 'react';
-import { Mesh, OcclusionMaterial, Ray, Scene, Vector3, WebXRDefaultExperience, WebXRHandTracking, WebXRPlaneDetector, WebXRFeatureName, Nullable, Color3 } from '@babylonjs/core';
+import { Mesh, OcclusionMaterial, Ray, Scene, Vector3, WebXRDefaultExperience, WebXRHandTracking, WebXRPlaneDetector, WebXRFeatureName, Nullable, Color3, WebXRInputSource } from '@babylonjs/core';
 import { ViewProps } from 'react-native';
 import { XRFeatureDetails, IXRFeatureDetails, GetOrEnableXRFeature, ArticulatedHandTrackerOptions, GetDefaultPlaneDetectorOptions, CreateGeometryObserver, IGeometryObserverRenderOptions } from 'mixed-reality-toolkit';
 import { MidiPlayback } from 'midi-materials';
@@ -66,15 +66,40 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
         SetupAudioFileAsync();
     }, []);
 
+    let cubes = new Array<any>();
     useEffect(() => {
         if (!!props.scene &&
             !!props.xrExperience &&
             !!midiDataBuffer &&
             !!sound) {
 
+            type controllerStruct = {
+                controller: WebXRInputSource;
+                lastKnownPosition: Vector3;
+            }
+            let controllers = new Map<string, controllerStruct>();
+            let controllerAddedCallback = props.xrExperience.input.onControllerAddedObservable.add((controller) => {
+                controllers.set(controller.uniqueId, {controller: controller, lastKnownPosition: controller.pointer.position.clone()});
+            });
+            let controllerRemovedCallback = props.xrExperience.input.onControllerRemovedObservable.add((controller) => {
+                controllers.delete(controller.uniqueId);
+            });
+
+            function UpdateControllerPositions() {
+                let totalDelta = Vector3.Zero();
+                controllers.forEach((inputSource) => {
+                    let delta = Vector3.Zero();
+                    inputSource.controller.pointer.position.subtractToRef(inputSource.lastKnownPosition, delta);
+                    totalDelta.addInPlace(delta);
+
+                    inputSource.lastKnownPosition = inputSource.controller.pointer.position.clone();
+                });
+
+                return totalDelta;
+            };
+
             let lastPickedPoint: Nullable<Vector3> = null;
             let ditherMaterials: Map<number, DitherEdgeMaterial> = new Map<number, DitherEdgeMaterial>();
-            let cubes = new Array<any>();
             function OnNoteOnEvent(event: NoteOnEvent) {
                 if (!!props.scene &&
                     !!props.xrExperience) {
@@ -136,18 +161,21 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
                     cubeMesh.position.z += Math.random() + 1.0;
 
                     const anyCube = cubeMesh as any;
-                    anyCube["_fallSpeed"] = (Math.random() * 0.05) + 0.05;
-                    anyCube["_fallAccel"] = (Math.random() * 0.5) + 1;
 
-                    anyCube["_animate"] = (scene: Scene) => {
+                    anyCube["_fallAccel"] = Vector3.Down().scale((Math.random() * 0.5) + 1);
+                    anyCube["_fallVelocity"] = Vector3.Down().scale((Math.random() * 0.05) + 0.05);
+
+                    anyCube["_animate"] = (scene: Scene, controllerDelta: Vector3) => {
                         const deltaTimeSeconds = scene.deltaTime * 0.001;
-                        const fallSpeed = anyCube["_fallSpeed"] + anyCube["_fallAccel"] * deltaTimeSeconds;
-                        anyCube["_fallSpeed"] = fallSpeed;
-                        cubeMesh.position.y -= fallSpeed * deltaTimeSeconds;
+
+                        const fallVelocityDelta = controllerDelta.scale(1 / deltaTimeSeconds).add(anyCube["_fallAccel"].scale(deltaTimeSeconds));
+                        anyCube["_fallVelocity"] = anyCube["_fallVelocity"].add(fallVelocityDelta.scale(0.5));
+
+                        cubeMesh.position.addInPlace(anyCube["_fallVelocity"].scale(deltaTimeSeconds));
+
                         if (cubeMesh.position.y < -1.5) {
                             cubeMesh.material?.dispose();
                             cubeMesh.dispose();
-                            scene.onBeforeRenderObservable.removeCallback(anyCube["_animate"]);
                             return false;
                         }
                         return true;
@@ -167,13 +195,22 @@ export const XRCustomComponent: FunctionComponent<XRBaseProps> = (props: XRBaseP
             };
             const geometryObserver = CreateGeometryObserver(props.xrExperience, geometryRenderOptions);
 
-            props.scene.registerBeforeRender(() => { cubes = cubes.filter((cube) => cube["_animate"](props.scene)) });
-
+            const sceneObservable = props.scene.onBeforeRenderObservable.add(() => {
+                let controllerDelta = UpdateControllerPositions();
+                cubes = cubes.filter((cube) => cube["_animate"](props.scene, controllerDelta));
+            });
+            
             sound.play();
             midiPlayback.play();
 
             return () => {
                 geometryObserver.dispose();
+
+                controllers.clear();
+                props.scene?.onBeforeRenderObservable.remove(sceneObservable);
+
+                props.xrExperience?.input.onControllerAddedObservable.remove(controllerAddedCallback);
+                props.xrExperience?.input.onControllerRemovedObservable.remove(controllerRemovedCallback);
 
                 midiPlayback.noteOnObservable.removeCallback(OnNoteOnEvent);
                 midiPlayback.dispose();
